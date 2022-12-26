@@ -64,7 +64,7 @@ Server를 구동하는 법을 보자. Power on this virtual Machine을 누르면
 
 > 단축키 ctrl+alt를 눌러 컴퓨터의 제어로, ctrl+g를 눌러 가상머신의 제어로 전환할 수 있다.
 
-> 가상머신 내 ctrl+alt+del을 누르고 싶다면, ctrl+alt+insert를 누르면 된다.(VMware 메뉴를 사용해도 된다.)
+> 가상머신 내 ctrl+alt+del을 누르고 싶다면, ctrl+alt+insert를 누르면 된다.(VMware 상단 메뉴에 있는 버튼을 사용해도 가능하다.)
 
 > 전체화면은 VMware의 최대화 아이콘이나 ctrl+alt+enter를 입력하면 된다.
 
@@ -153,6 +153,10 @@ DNS 서버: 192.168.XXX.2
 Edit Virtual machine settings 메뉴를 누른 뒤, CD/DVD (SATA)에서 ISO 파일을 선택하여 넣어준다.
 
 ![우분투 리눅스 설치](images/vm_os_install_1.png)
+
+> hard disk나 CD/DVD device를 주로 IDE device나 SATA device라고 한다. 서버용으로는 주로 SCSI hard disk를 사용하며, SSD 형태의 flash memory를 사용할 수 있는 MVMe 장치도 제공된다.
+
+> VMware에서는 이들의 종류와 상관 없이 가상으로 생성하기 때문에, 이 설정은 사실 실제 컴퓨터의 저장 장치 종류와는 무관하다.
 
 그 다음 가상머신을 부팅한다.
 
@@ -476,9 +480,11 @@ Kubuntu 20.04 LTS를 설치한다. Client에 'kubuntu-20.04-desktop-amd64.iso' �
 
 ### 1.6.1 초기 설정
 
-설치가 완료되었다면 해상도를 1024x768로 조절한다. 왼쪽 하단을 눌러 설정으로 들어갈 수 있다.([디스플레이와 모니터])
+설치가 완료되었다면 해상도를 1024x768로 조절한다. 왼쪽 하단 톱니바퀴([프로그램 실행기])을 눌러 [시스템 설정] - [디스플레이와 모니터]로 들어가면 된다.
 
-해상도 조절이 끝났다면 마찬가지로 왼쪽 하단을 누른 뒤 [프로그램]을 클릭하고, [Konsole 터미널]을 실행한다. 그리고 다음 명령으로 sources.list 파일을 변경한다.
+![client 설치 2](images/vm_client_setup_2.png)
+
+해상도 조절이 끝났다면 마찬가지로 왼쪽 하단을 누른 뒤 [Konsole]\(터미널)을 실행한다. 그리고 다음 명령으로 sources.list 파일을 변경하고 새 파일을 받는다.
 
 ```bash
 cd /etc/apt
@@ -489,13 +495,21 @@ ls
 
 변경이 완료됐으면 sudo apt update 명령으로 패키지를 설치한다.
 
-또한 완료가 되었으면 추가로 sudo apt -y install net-tools 명령으로 필수 패키지를 설치한다. 설치가 끝나면 exit 명령으로 터미널을 닫는다.
+```bash
+sudo apt update
+```
+
+설치가 완료되면 추가로 sudo apt -y install net-tools 명령을 입력하여 필수 패키지를 설치한다. 설치가 끝나면 exit 명령으로 터미널을 닫는다.
+
+```bash
+sudo apt -y install net-tools
+```
 
 이 다음으로 [프로그램 실행기] - [시스템 설정] - [전원 관리]에서 '화면 에너지 절약'의 체크를 해제한다.
 
 > 참고로 한글은 ctrl + space 키로 전환할 수 있다.
 
-마무리로 halt -p 명령을 입력해서 시스템을 종료한다. DVD를 제거하고, 메모리를 조절한다. 그리고 snapshot을 찍어 현재 상태를 보존한다.
+마무리로 halt -p 명령을 입력해서 시스템을 종료한다. DVD를 제거하고, 메모리를 조절한다. 그리고 snapshot으로 현재 상태를 보존한다.
 
 ---
 
@@ -505,10 +519,14 @@ Windows 10 한국어 32비트(x86)용을 설치한다. 마찬가지로 ISO를 �
 
 > [다운로드 링크](https://www.microsoft.com/ko-kr/evalcenter/evaluate-windows-10-enterprise)
 
-WinClient는 설치 완료 후에 VMware Tools를 설치하는 편이 좋다. 가상머신 메뉴에서
+> 혹은 [소스 구글 드라이브](https://drive.google.com/drive/folders/1c6Q2m0SAxu77fx2fwEmTduJ3Wxi2x_PM)에서 '18363.418.191007-0143.19h2_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x86FRE_ko-kr.iso' 파일을 다운로드한다.
 
-> 만약 자동으로 설치되지 않는다면, 가상머신의 파일 탐색기에서 'D:\' 폴더에 있는 setup.exe를 실행하면 된다.
+WinClient는 설치 완료 후에 VMware Tools를 설치하는 편이 좋다. 상단 메뉴의 [VM] - [install VMware Tools]를 클릭하면 된다. 그러면 D 드라이브에 마운트되고 이를 실행해서 설치할 수 있다.
 
-마무리로 WinClient도 snapshot(설정 완료)를 설정한다.
+> Player라면 가상머신 메뉴에서 [Player] - [Manage] - [Install VMware Tools]를 선택하면 된다.
+
+> 만약 자동으로 설치되지 않는다면 VMware Tools를 ISO 파일로 연결한 뒤, 가상머신의 파일 탐색기에서 'D:\' 폴더에 있는 setup.exe를 실행하면 된다.
+
+마무리로 WinClient도 snapshot(설정 완료)를 만든다.
 
 ---
