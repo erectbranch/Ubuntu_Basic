@@ -232,7 +232,7 @@ ls -l
 
 | 명령어 | 설명 | 사용 예 |
 | --- | --- | --- |
-| ls | list의 약자.<br/>해당 디렉터리에 있는 파일 목록을 나열한다. | ls -a: 숨긴 파일을 포함한 현재 디렉터리 목록<br/>ls -l: 자세하게 현재 디렉터리 목록을 표시<br/>ls \*.conf: 확장자가 conf인 목록을 표시<br/>ls -l /etc/systemd/b\*: /etc/systemd/ 디렉터리 목록 중 앞 글자가 'b'인 목록을 표시 |
+| ls | list의 약자.<br/>해당 디렉터리에 있는 파일 목록을 나열한다. | ls -a: 숨긴 파일을 포함한 현재 디렉터리 목록<br/>ls -l: 파일 속성을 포함하여 자세하게 현재 디렉터리 목록을 표시<br/>ls \*.conf: 확장자가 conf인 목록을 표시<br/>ls -l /etc/systemd/b\*: /etc/systemd/ 디렉터리 목록 중 앞 글자가 'b'인 목록을 표시 |
 | cd | change directory의 약자<br/>디렉터리를 이동한다. | cd -ubuntu: ubuntu 사용자의 홈 디렉터리로 이동<br/>cd ..: 상대 경로 '..'를 이용해서 바로 상위(부모) 디렉터리로 이동<br/>cd ../etc/systemd: 상위 디렉터리로 이동한 뒤 /etc/systemd도 이동 |
 | pwd | print working directory의 약자<br/>현재 작업 중인 디렉터리 경로 출력 | |
 | rm | remove의 약자<br/>파일이나 디렉터리를 삭제한다.<br/>대신 **권한**을 가지고 있어야 한다.<br/>(root 사용자는 모든 권한을 가지고 있어서 제약이 없다.) | rm -i abc.txt: 확인하는 메시지를 띄우고 삭제 여부를 결정<br/>rm -f abc.txt: force를 이용하여 묻지 않고 바로 삭제(옵션 없이 rm으로 삭제 시 rm -f와 같다.)<br/>rm -rf abc: abc 디렉터리와 그 아래 하위 디렉터리를 강제로 삭제(r은 recursive의 약자) |
@@ -250,3 +250,237 @@ ls -l
 
 ---
 
+## 4.3 사용자 관리와 파일 속성
+
+X 윈도를 사용한다면 [설정] - [사용자] 메뉴에서 사용자들을 추가하거나 암호를 변경할 수도 있다. 하지만 GUI를 제공하지 않는 환경에서 관리를 하려면, 명령을 이용해서 관리하는 방법을 알아야 한다.
+
+---
+
+### 4.3.1 사용자와 그룹
+
+앞서 기술한 대로 리눅스는 여러 명이 동시에 접속해서 사용할 수 있는 multi-user system이다. root 사용자는 시스템의 모든 작업을 실행할 수 있는 권한을 가지고 있으며, 여기에는 시스템에 접속할 수 있는 사용자를 생성할 수 있는 권한도 있다.
+
+이를 확인하려면 gedit이나 vi 에디터로 /etc/passwd 파일을 열어보면 된다. 
+
+![/etc/passwd 파일](images/passwd.png)
+
+![/etc/passwd 파일 이어서](images/passwd_2.png)
+
+- 사용자 이름:암호:사용자 ID:사용자가 소속된 그룹 ID:추가 정보:홈 디렉터리:기본 셸
+
+제일 위의 관리자 root와 사진에는 없지만 아래로 내려가면 있는 ubuntu 사용자를 제외하면 모두 리눅스에서 원래 존재하는 표준 사용자이다.
+
+ubuntu 사용자를 살펴보자.
+
+- ubuntu:x:1000:1000:ubuntu,,,:/home/ubuntu:/bin/bash
+
+  - 암호: x로 표시되어 있다. 이는 /etc/shadow 파일에 비밀번호가 지정되어 있다는 의미다.
+
+  - 사용자 ID는 1000번이다.
+
+  - ubuntu가 속한 그룹의 ID는 1000번이다.(추가 정보는 '전체 이름, 사무실 호수, 직장 전화번호, 집 전화번호, 기타'로 나타내는데 모두 생략해도 된다.)
+
+  - 홈 디렉터리는 /home/ubuntu이다.
+
+  - 로그인 시 제공되는 셸은 /bin/bash이다.
+
+사용자 ID와 그룹 ID와 관련된 정보는 /etc/group 파일을 확인하면 알 수 있다.
+
+![/etc/group 파일](images/group.png)
+
+- 그룹 이름:비밀번호:그룹 ID:그룹에 속한 사용자 이름
+
+참고로 마지막 자리인 '그룹에 속한 사용자 이름'은 아무것도 쓰여 있지 않을 수 있다. 참조로 사용되며 비어 있다고 해서 반드시 없다는 뜻은 아니다.
+
+사용자 및 그룹과 관련된 명령어로는 다음과 같은 것들이 있다.
+
+| 명령어 | 설명 |
+| --- | --- |
+| adduser | 새로운 사용자를 추가한다.<br/>/etc/passwd, /etc/group 파일에 새로운 행으로 추가된다. |
+| passwd | 사용자의 비밀번호를 변경한다.<br/>passwd {사용자 이름}을 입력하면 된다. |
+| usermod | 사용자의 속성을 변경한다.<br/>기본 셸이나 그룹 등을 변경할 수 있다. |
+| userdel | 사용자를 삭제한다.<br/>-r 옵션을 붙이면 홈 디렉터리까지 함께 삭제한다. |
+| chage | change age의 약자<br/>사용자의 암호를 주기적으로 변경하도록 설정한다. |
+| groups | 사용자가 속한 그룹을 보여준다. |
+| groupadd | 새 그룹을 생성한다.<br/>-gid {ID} 옵션으로 생성하면서 동시에 그룹 ID도 지정할 수 있다. |
+| groupmod | 그룹 속성을 변경한다. |
+| groupdel | 그룹을 삭제한다. |
+| gpasswd | 그룹의 암호를 설정하거나 관리를 수행한다.<br/>-A {사용자명} {그룹명} 옵션으로 특정 사용자를 해당 그룹의 관리자로 지정할 수 있다.<br/>-a {사용자명} {그룹명}로 그룹에 사용자를 추가, -d {사용자명} {그룹명}로 그룹에서 사용자를 제거할 수 있다. |
+
+<br/>
+
+### <span style='background-color: #393E46; color: #F7F7F7'>&nbsp;&nbsp;&nbsp;📝 예제: 사용자 및 그룹 관리하기&nbsp;&nbsp;&nbsp;</span>
+
+설정 완료 스냅 숏 기준의 Server에서 실습한다. root에서 새로운 사용자를 생성할 것이다.
+
+1. 새로운 사용자 생성
+
+user1을 만들어 보자. 암호는 1234로 하고 나머지는 Enter를 입력해서 생략한다.([Y/n]도 Enter를 눌러도 괜찮다.)
+
+```bash
+adduser user1
+```
+
+![사용자 생성](images/user_manage_ex_1.png)
+
+2. 사용자 생성 확인
+
+tail /etc/passwd 명령으로 사용자가 제대로 추가되었는지 확인한다.
+
+![사용자 생성 확인](images/user_manage_ex_2.png)
+
+잘 보면 새로운 사용자인 user1의 사용자 ID가 1001, 속한 group ID가 1001이 되었다. 이는 ubuntu 사용자(ID: 1000)에 자동으로 1을 더해서 생성된 것이다.
+
+또한 사용자 홈 디렉터리는 기본 설정인 '/home/{사용자 이름}'으로 되어 있음을 확인할 수 있다. 셸도 기본 설정인 '/bin/bash'로 지정되었다.
+
+3. 그룹 파일을 확인
+
+user1을 생성할 때 그룹을 별도로 지정하지 않았다. tail /etc/group 명령으로 한 번 확인해 보자.
+
+![그룹 확인](images/user_manage_ex_3.png)
+
+맨 마지막에 그룹이 생성되어 있는 것을 확인할 수 있는데, 그룹 이름이 사용자 이름과 동일한 user1로 되어 있다. 또한 그룹 ID도 1000+1로 자동 지정되었다.
+
+> 이런 이유 때문에 많은 사용자를 관리할 때 그룹 이름 등록을 제대로 하지 않으면, 그룹 이름이 사용자 이름하고 같아지므로 관리하기 힘들게 된다. 따라서 그룹을 먼저 만들고 사용자 생성을 제대로 하는 것이 바람직하다.
+
+참고로 이렇게 생성한 user1을 지우고 싶다면 'userdel -r user1' 명령으로 삭제하면 된다.
+
+<br/>
+
+### <span style='background-color: #393E46; color: #F7F7F7'>&nbsp;&nbsp;&nbsp;📝 예제: 그룹을 생성하고 다수의 사용자를 포함시키기&nbsp;&nbsp;&nbsp;</span>
+
+ubuntuGroup이라는 새 그룹을 만들고 사용자를 포함시켜 보자.
+
+1. 그룹 생성하기
+
+groupadd ubuntuGroup 명령으로 ubuntuGroup을 생성한다. 
+
+2. 그룹 생성 확인
+
+tail /etc/group 명령으로 생성이 잘 됐는지 확인한다.
+
+![그룹 생성 및 확인](images/group_manage_1.png)
+
+3. 그룹에 사용자를 포함시키기
+
+adduser --gid {그룹ID} {사용자명} 명령으로 user1과 user2를 생성(암호: 1234)하면서 동시에 ubuntuGroup에 포함시킬 것이다.
+
+ubuntuGroup의 그룹 ID는 1001이었다.
+
+4. 생성한 사용자 확인
+
+tail /etc/passwd로 제대로 수행되었는지 확인한다.
+
+![그룹 지정 확인](images/group_manage_2.png)
+
+
+<br/>
+
+### <span style='background-color: #393E46; color: #F7F7F7'>&nbsp;&nbsp;&nbsp;📝 예제: /etc/shadow 파일과 /etc/skel 디렉터리&nbsp;&nbsp;&nbsp;</span>
+
+1. 생성한 사용자 암호 확인
+
+한 번 사용자의 암호가 어떻게 저장되었는지 살펴보자. tail /etc/shadow 명령으로 확인한다.
+
+![암호 확인](images/group_manage_3.png)
+
+user1과 user2 모두 지정한 암호는 1234였지만, 파일 내부를 보면 코드화되어 있으며 서로 값도 다른 것을 확인할 수 있다. 따라서 이런 방법으로는 암호를 알 수 없다.
+
+2. /etc/skel 디렉터리
+
+우선 /etc/skel 디렉터리 내부 파일 목록을 보자.
+
+![/etc/skel 디렉터리 내부](images/skel_ex_1.png)
+
+user1의 홈 디렉터리는 /home/user1이었다. 내부를 살펴보자.
+
+![/etc/skel 디렉터리 내부](images/skel_ex_2.png)
+
+두 디렉터리에 있는 파일이 동일한 것을 확인할 수 있다. 이는 user1을 생성할 때 /etc/skel 내부 파일을 user1의 홈 디렉터리 '/home/user1'로 복사하는 작업이 일어나기 때문이다.
+
+따라서 앞으로 생성하는 사용자에게 특정 파일을 배포하고 싶다면 /etc/skel 디렉터리에 넣고 관리하면 된다.
+
+---
+
+### 4.3.2 파일, 디렉터리 소유권과 허가권
+
+앞서 ls -l 명령을 실행하면 디렉터리 내 파일들을 세부 파일 속성과 함께 표시했다. 다시 살펴보기 위해 root 사용자 홈 디렉터리에서 'touch sample.txt' 명령으로 빈 파일을 만들고 확인해 보았다.
+
+![자세한 파일 리스트](images/list_file_type.png)
+
+이를 자세히 살펴보자.
+
+- \-rw-r--r-- 1 root root 0 12월 27 14:48 sample.txt
+
+  - \-: 파일 유형. 일반적인 파일일 경우 '-'가 표시된다. 디렉터리는 'd', 그 외에 b(블록 디바이스), c(문자 디바이스), l(링크) 등이 있다.
+
+  - rw-r--r--: 파일 **permission**(허가권). rw-, r--, r--로 세 개씩 끊어서 읽으면 된다. 각각 소유자, 그룹, 그 외 사용자(other)의 permission을 나타낸다. 
+  
+    - r은 read, w는 write, x는 execute의 약자다.
+
+    - rw-: 읽거나 쓸 수 있지만 실행할 수 없다.
+
+    - rwx: 읽고, 쓰고, 실행이 가능하다.
+
+    - 이외 특수한 용도의 setuid, setgid, stiky bit 등을 사용할 수 있다.
+
+    - chmod 명령(change mode)으로 permission을 바꿀 수 있다.(root나 user만 가능) 예를 들어 chmod 777 sample.txt 명령을 실행하면 모든 사용자가 읽고,쓰고,실행할 수 있는 파일이 된다.
+
+  - root root: 파일을 **ownership**(소유)한 사용자, 그룹을 의미한다. sample.txt는 root 사용자가 소유자며, 속한 그룹명도 root이다.
+
+    - chown {새 사용자 이름}{.새 그룹 이름} {파일} 명령으로 ownership을 바꿀 수 있다.(그룹을 생략하면 소유자만 바뀐다.)
+
+    - chgrp {새 그룹 이름} {파일} 명령으로 그룹만 바꿀 수도 있다.
+
+   - 0: 파일 크기(Byte)를 의미한다.
+
+   - 12월 27 14:48: 마지막 변경 날짜와 시간을 나타낸다.
+
+   - sample.txt: 파일명
+
+
+참고로 파일 permission은 숫자로도 나타낼 수 있다. 예를 들어 rw-r--r--은 다음과 같다.
+
+|| user ||| group ||| other ||
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| r | w | - | r | - | - | r | - | - |
+| 4 | 2 | 0 | 4 | 0 | 0 | 4 | 0 | 0 |
+|| 6( $110_{2}$ ) ||| 4( $100_{2}$ ) ||| 4( $100_{2}$ ) ||
+
+예를 들어 permission이 754라면 'rwxr-xr--'가 된다. 
+
+- user: 읽고, 쓰고, 실행이 가능하다.
+
+- group: 읽고, 실행이 가능하다.
+
+- other: 읽기만 가능하다.
+
+> 참고로 디렉터리의 permission의 경우, 해당 디렉터리로 이동하려면 반드시 실행(x) 권한이 있어야만 가능하다. 따라서 일반적으로 실행(x) 권한은 user, group, other 모두에게 설정된 경우가 많다.
+
+---
+
+### 4.3.3 링크
+
+파일 **link**(링크)는 **hard link**(하드 링크)와 **symbolic link**(심볼릭 링크) 두 가지로 나뉜다.
+
+link를 설명하기 앞서 우선 inode란 개념을 알아야 한다. inode는 리눅스/유닉스 파일 시스템에서 사용하는 data structure이며, 모든 파일이나 디렉터리는 inode를 한 개씩 가지고 있다.(1개의 inode는 64byte로 구성된다.)
+
+inode는 permission, ownership, file type 등의 정보와, 해당 file의 실제 data address 정보를 가진다. 이런 inode가 모인 block을 inode block이라 하며, 일반적으로 전체 disk 공간의 1% 정도를 차지한다.
+
+> 나머지는 실제 data가 저장된 data block이 대부분을 차지한다.
+
+아래 그림은 inode1을 사용하는 원본 파일에 link가 생성되는 과정을 나타낸 것이다.
+
+![hard link와 symbolic link](images/link.png)
+
+- hard link: hardlink(하드 링크 파일)가 하나 생성되며 같은 inode1을 사용한다.
+
+   - hardlink는 특성상 data block에서 같은 base file(원본 파일)을 사용하므로 크기도 동일하게 된다.
+
+   - ln {링크 대상 파일명} {링크 파일명} 명령으로 생성 가능하다.
+
+- symbolic link: 새로운 inode2를 만들고, 이는 base file을 가리키는 pointer을 가진다.(Windows의 바로 가기도 이런 symbolic link이다.) 일반적으로 주로 사용한다.
+
+   - ln -s {링크 대상 파일명} {링크 파일명} 명령으로 생성한다.
+
+---
